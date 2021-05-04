@@ -1,37 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import firebase from 'firebase';
+import 'firebase/auth';
+import firebaseConfig from '../helpers/apiKeys';
 import './App.scss';
+import { getAuthors } from '../helpers/data/authorData';
+import NavBar from '../components/NavBar';
+import Routes from '../helpers/Routes';
+
+firebase.initializeApp(firebaseConfig);
 
 function App() {
-  const [domWriting, setDomWriting] = useState('Nothing Here!');
+  const [authors, setAuthors] = useState([]);
+  const [user, setUser] = useState(null);
 
-  const handleClick = (e) => {
-    console.warn(`You clicked ${e.target.id}`);
-    setDomWriting(`You clicked ${e.target.id}! Check the Console!`);
-  };
+  useEffect(() => {
+    getAuthors().then((resp) => setAuthors(resp));
+  }, []);
+
+  useEffect(() => {
+    firebase.auth().onAuthStateChanged((authed) => {
+      if (authed) {
+        // do something or another
+        const userInfoObj = {
+          fullName: authed.displayName,
+          profileImage: authed.photoURL,
+          uid: authed.uid,
+          user: authed.email.split('@')[0]
+        };
+        setUser(userInfoObj);
+      } else if (user || user === null) {
+        // do something
+        setUser(false);
+      }
+    });
+  }, []);
 
   return (
-    <div className='App'>
-      <h2>INSIDE APP COMPONENT</h2>
-      <div>
-        <button
-          id='this-button'
-          className='btn btn-info'
-          onClick={handleClick}
-        >
-          I am THIS button
-        </button>
-      </div>
-      <div>
-        <button
-          id='that-button'
-          className='btn btn-primary mt-3'
-          onClick={handleClick}
-        >
-          I am THAT button
-        </button>
-      </div>
-      <h3>{domWriting}</h3>
-    </div>
+    <>
+    <Router>
+      <NavBar />
+      <Routes
+      authors={authors}
+      setAuthors={setAuthors} />
+    </Router>
+    </>
   );
 }
 
